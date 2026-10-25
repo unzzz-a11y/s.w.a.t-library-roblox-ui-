@@ -1,5 +1,5 @@
 -- ==============================================================================
--- s.w.a.t - Ware │ private (Custom Monochrome Black & White UI Library)
+-- s.w.a.t - Ware | private (Custom Monochrome Black & White UI Library)
 -- Full custom black & white theme, interactive sounds, animated flowing gradient & typewriter effect
 -- Ready to host on GitHub or use locally
 -- ==============================================================================
@@ -644,6 +644,10 @@ function OrionLib:MakeNotification(NotificationConfig)
 	end)
 end    
 
+local function SanitizePath(path)
+	return tostring(path or "SWAT_Ware"):gsub('[\\/:*?"<>|│]', '_')
+end
+
 local CM = {
 	CurrentConfig = "Main.lua (Default)",
 	ConfigButtons = {},
@@ -652,7 +656,7 @@ local CM = {
 }
 
 local function CMGetFolder()
-	return (OrionLib.Folder or "s.w.a.t - Ware │ private") .. "/configs"
+	return SanitizePath(OrionLib.Folder or "SWAT_Ware") .. "/configs"
 end
 
 local function CMGetConfigPath(name)
@@ -660,10 +664,12 @@ local function CMGetConfigPath(name)
 end
 
 local function CMEnsureFolder()
-	local base = OrionLib.Folder or "s.w.a.t - Ware │ private"
+	local base = SanitizePath(OrionLib.Folder or "SWAT_Ware")
 	pcall(function()
-		if not isfolder(base) then makefolder(base) end
-		if not isfolder(CMGetFolder()) then makefolder(CMGetFolder()) end
+		if typeof(makefolder) == "function" and typeof(isfolder) == "function" then
+			if not isfolder(base) then makefolder(base) end
+			if not isfolder(CMGetFolder()) then makefolder(CMGetFolder()) end
+		end
 	end)
 end
 
@@ -815,12 +821,12 @@ end
 local TabSectionLayoutPath = nil
 
 local function GetTabSectionLayoutPath()
-	return (OrionLib.Folder or "s.w.a.t - Ware │ private") .. "/tab_sections.txt"
+	return SanitizePath(OrionLib.Folder or "SWAT_Ware") .. "/tab_sections.txt"
 end
 
 local function SaveTabSectionLayout(layoutData)
 	pcall(function()
-		local base = OrionLib.Folder or "s.w.a.t - Ware │ private"
+		local base = OrionLib.Folder or "SWAT_Ware"
 		if not isfolder(base) then makefolder(base) end
 		writefile(GetTabSectionLayoutPath(), HttpService:JSONEncode(layoutData))
 	end)
@@ -854,7 +860,7 @@ function OrionLib:MakeWindow(WindowConfig)
 	if WindowConfig.IntroEnabled == nil then
 		WindowConfig.IntroEnabled = true
 	end
-	WindowConfig.IntroText = WindowConfig.IntroText or "Starting s.w.a.t - Ware │ private"
+	WindowConfig.IntroText = WindowConfig.IntroText or "Starting s.w.a.t - Ware | private"
 	WindowConfig.CloseCallback = WindowConfig.CloseCallback or function() end
 	WindowConfig.ShowIcon = WindowConfig.ShowIcon or false
 	WindowConfig.Icon = WindowConfig.Icon or "rbxassetid://114924858399533"
@@ -863,13 +869,19 @@ function OrionLib:MakeWindow(WindowConfig)
 	OrionLib.SaveCfg = WindowConfig.SaveConfig
 
 	if WindowConfig.SaveConfig then
+		WindowConfig.ConfigFolder = SanitizePath(WindowConfig.ConfigFolder or "SWAT_Ware")
+		OrionLib.Folder = WindowConfig.ConfigFolder
 		pcall(function()
-			if not isfolder(WindowConfig.ConfigFolder) then
-				makefolder(WindowConfig.ConfigFolder)
-			end
-			CMEnsureFolder()
-			if not isfile(CMGetConfigPath("Main.lua (Default)")) then
-				writefile(CMGetConfigPath("Main.lua (Default)"), "{}")
+			if typeof(makefolder) == "function" and typeof(isfolder) == "function" then
+				if not isfolder(WindowConfig.ConfigFolder) then
+					makefolder(WindowConfig.ConfigFolder)
+				end
+				CMEnsureFolder()
+				if typeof(isfile) == "function" and typeof(writefile) == "function" then
+					if not isfile(CMGetConfigPath("Main.lua (Default)")) then
+						writefile(CMGetConfigPath("Main.lua (Default)"), "{}")
+					end
+				end
 			end
 		end)
 	end
@@ -969,13 +981,13 @@ function OrionLib:MakeWindow(WindowConfig)
 				AddThemeObject(MakeElement("Stroke"), "Stroke"),
 				Create("UICorner", {CornerRadius = UDim.new(1, 0)})
 			}),
-			AddThemeObject(SetProps(MakeElement("Label", "s.w.a.t - Ware │ private", WindowConfig.HidePremium and 14 or 13), {
+			AddThemeObject(SetProps(MakeElement("Label", "SWAT_Ware", WindowConfig.HidePremium and 14 or 13), {
 				Size = UDim2.new(1, -60, 0, 13),
 				Position = WindowConfig.HidePremium and UDim2.new(0, 50, 0, 19) or UDim2.new(0, 50, 0, 12),
 				Font = Enum.Font.GothamBold,
 				ClipsDescendants = true
 			}), "Text"),
-			AddThemeObject(SetProps(MakeElement("Label", "s.w.a.t - Ware │ private", 12), {
+			AddThemeObject(SetProps(MakeElement("Label", "SWAT_Ware", 12), {
 				Size = UDim2.new(1, -60, 0, 12),
 				Position = UDim2.new(0, 50, 1, -25),
 				Visible = not WindowConfig.HidePremium,
@@ -1981,7 +1993,7 @@ local cancelFrame, cancelClick = CreateAnimatedButton({
 		inputBox.BackgroundTransparency = 1
 		inputBox.Text = ""
 		inputBox.TextColor3 = WHITE
-		inputBox.PlaceholderText = "s.w.a.t - Ware │ private..."
+		inputBox.PlaceholderText = "s.w.a.t - Ware | private..."
 		inputBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 115)
 		inputBox.Font = Enum.Font.Gotham
 		inputBox.TextSize = 12
@@ -4774,7 +4786,7 @@ table.insert(AllRegisteredTabs, {name = TabConfig.Name, frame = TabFrame})
 					Position = UDim2.new(0, 150, 0, 112),
 					Font = Enum.Font.GothamBold
 				}), "Text"),
-				AddThemeObject(SetProps(MakeElement("Label", "This part of the script is locked to Sirius Premium users. Purchase Premium in the Discord server (s.w.a.t - Ware │ private)", 12), {
+				AddThemeObject(SetProps(MakeElement("Label", "This part of the script is locked to Sirius Premium users. Purchase Premium in the Discord server (s.w.a.t - Ware | private)", 12), {
 					Size = UDim2.new(1, -200, 0, 14),
 					Position = UDim2.new(0, 150, 0, 138),
 					TextWrapped = true,
