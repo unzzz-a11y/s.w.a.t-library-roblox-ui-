@@ -3696,11 +3696,11 @@ table.insert(AllRegisteredTabs, {name = TabConfig.Name, frame = TabFrame})
 						ClipsDescendants = true,
 						Name = "F"
 					}),
-				AddConnection(Click.MouseEnter, PlayHoverSound)
-				AddConnection(Click.MouseButton1Click, PlayClickSound)
 					AddThemeObject(MakeElement("Stroke"), "Stroke"),
 					MakeElement("Corner")
 				}), "Second")
+				AddConnection(Click.MouseEnter, PlayHoverSound)
+				AddConnection(Click.MouseButton1Click, PlayClickSound)
 				AddConnection(DropdownList:GetPropertyChangedSignal("AbsoluteContentSize"), function()
 					DropdownContainer.CanvasSize = UDim2.new(0, 0, 0, DropdownList.AbsoluteContentSize.Y)
 				end)  
@@ -3859,11 +3859,11 @@ table.insert(AllRegisteredTabs, {name = TabConfig.Name, frame = TabFrame})
 						ClipsDescendants = true,
 						Name = "F"
 					}),
-				AddConnection(Click.MouseEnter, PlayHoverSound)
-				AddConnection(Click.MouseButton1Click, PlayClickSound)
 					AddThemeObject(MakeElement("Stroke"), "Stroke"),
 					MakeElement("Corner")
 				}), "Second")
+				AddConnection(Click.MouseEnter, PlayHoverSound)
+				AddConnection(Click.MouseButton1Click, PlayClickSound)
 				AddConnection(DropdownList:GetPropertyChangedSignal("AbsoluteContentSize"), function()
 					DropdownContainer.CanvasSize = UDim2.new(0, 0, 0, DropdownList.AbsoluteContentSize.Y)
 				end)
@@ -4093,11 +4093,11 @@ table.insert(AllRegisteredTabs, {name = TabConfig.Name, frame = TabFrame})
 						ClipsDescendants = true,
 						Name = "F"
 					}),
-				AddConnection(Click.MouseEnter, PlayHoverSound)
-				AddConnection(Click.MouseButton1Click, PlayClickSound)
 					AddThemeObject(MakeElement("Stroke"), "Stroke"),
 					MakeElement("Corner")
 				}), "Second")
+				AddConnection(Click.MouseEnter, PlayHoverSound)
+				AddConnection(Click.MouseButton1Click, PlayClickSound)
 				AddConnection(DropdownList:GetPropertyChangedSignal("AbsoluteContentSize"), function()
 					DropdownContainer.CanvasSize = UDim2.new(0, 0, 0, DropdownList.AbsoluteContentSize.Y)
 				end)
