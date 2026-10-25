@@ -12,42 +12,48 @@ local Mouse = LocalPlayer:GetMouse()
 local HttpService = game:GetService("HttpService")
 local SoundService = game:GetService("SoundService")
 
-local function CreateSound(id, vol, pitch)
-	local sound = Instance.new("Sound")
-	sound.SoundId = "rbxassetid://" .. tostring(id)
-	sound.Volume = vol or 0.35
-	sound.PlaybackSpeed = pitch or 1
-	sound.Parent = SoundService
-	return sound
+local function SafePlaySound(id, vol, pitch)
+	task.spawn(function()
+		pcall(function()
+			local s = Instance.new("Sound")
+			s.SoundId = "rbxassetid://" .. tostring(id)
+			s.Volume = vol or 0.3
+			s.PlaybackSpeed = pitch or 1
+			s.Parent = SoundService
+			s:Play()
+			task.delay(1.5, function()
+				if s and s.Parent then
+					s:Destroy()
+				end
+			end)
+		end)
+	end)
 end
 
-local ClickSound = CreateSound(6895079853, 0.45, 1.0)
-local HoverSound = CreateSound(6895079853, 0.22, 1.45)
-local DragSound = CreateSound(9114223175, 0.35, 1.6)
-
+local lastClickTime = 0
 local function PlayClickSound()
-	pcall(function()
-		ClickSound.TimePosition = 0
-		ClickSound:Play()
-	end)
+	local now = os.clock()
+	if now - lastClickTime >= 0.04 then
+		lastClickTime = now
+		SafePlaySound(6895079853, 0.4, 1.0)
+	end
 end
 
+local lastHoverTime = 0
 local function PlayHoverSound()
-	pcall(function()
-		HoverSound.TimePosition = 0
-		HoverSound:Play()
-	end)
+	local now = os.clock()
+	if now - lastHoverTime >= 0.03 then
+		lastHoverTime = now
+		SafePlaySound(6895079853, 0.18, 1.45)
+	end
 end
 
 local lastDragTime = 0
 local function PlayDragSound()
 	local now = os.clock()
-	if now - lastDragTime >= 0.035 then
+	if now - lastDragTime >= 0.04 then
 		lastDragTime = now
-		pcall(function()
-			DragSound.TimePosition = 0
-			DragSound:Play()
-		end)
+		SafePlaySound(9114223175, 0.28, 1.6)
 	end
 end
 
@@ -998,39 +1004,52 @@ function OrionLib:MakeWindow(WindowConfig)
 	TitleGradient.Offset = Vector2.new(-1, 0)
 	TitleGradient.Parent = WindowName
 
-	task.spawn(function()
-		local step = 0
-		while WindowName and WindowName.Parent do
-			local dt = RunService.RenderStepped:Wait()
-			step = step + dt * 0.45
-			if step >= 2 then
-				step = step - 2
-			end
-			TitleGradient.Offset = Vector2.new(step - 1, 0)
-		end
+	pcall(function()
+		local gradientTween = TweenService:Create(
+			TitleGradient,
+			TweenInfo.new(2.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, false),
+			{ Offset = Vector2.new(1, 0) }
+		)
+		gradientTween:Play()
 	end)
 
-	-- Typewriter Effect: types title -> waits 8s -> deletes -> waits 0.8s -> repeats
+	-- Safe Typewriter Effect (splits whole UTF-8 characters, never corrupts multi-byte strings)
 	task.spawn(function()
-		local fullTitle = WindowConfig.Name
+		local fullTitle = tostring(WindowConfig.Name or "")
+		local characters = {}
+		pcall(function()
+			for _, code in utf8.graphemes(fullTitle) do
+				table.insert(characters, string.sub(fullTitle, code[1], code[2]))
+			end
+		end)
+		if #characters == 0 then
+			for i = 1, #fullTitle do
+				table.insert(characters, string.sub(fullTitle, i, i))
+			end
+		end
+
 		WindowName.Text = ""
 		while WindowName and WindowName.Parent do
-			for i = 1, #fullTitle do
+			-- 1. Type letter by letter
+			for i = 1, #characters do
 				if not WindowName or not WindowName.Parent then break end
-				WindowName.Text = string.sub(fullTitle, 1, i)
+				WindowName.Text = table.concat(characters, "", 1, i)
 				task.wait(0.05)
 			end
 			WindowName.Text = fullTitle
 
+			-- 2. Wait 8 seconds
 			task.wait(8)
 
-			for i = #fullTitle, 0, -1 do
+			-- 3. Delete letter by letter
+			for i = #characters, 0, -1 do
 				if not WindowName or not WindowName.Parent then break end
-				WindowName.Text = string.sub(fullTitle, 1, i)
+				WindowName.Text = i > 0 and table.concat(characters, "", 1, i) or ""
 				task.wait(0.03)
 			end
 			WindowName.Text = ""
 
+			-- 4. Wait 0.8 seconds
 			task.wait(0.8)
 		end
 	end)
