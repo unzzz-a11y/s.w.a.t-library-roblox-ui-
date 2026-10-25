@@ -863,8 +863,12 @@ function OrionLib:MakeWindow(WindowConfig)
 	WindowConfig.IntroText = WindowConfig.IntroText or "Starting s.w.a.t - Ware | private"
 	WindowConfig.CloseCallback = WindowConfig.CloseCallback or function() end
 	WindowConfig.ShowIcon = WindowConfig.ShowIcon or false
-	WindowConfig.Icon = WindowConfig.Icon or "rbxassetid://114924858399533"
-	WindowConfig.IntroIcon = WindowConfig.IntroIcon or "rbxassetid://114924858399533"
+	if WindowConfig.Icon == "rbxassetid://114924858399533" or not WindowConfig.Icon then
+		WindowConfig.Icon = "rbxthumb://type=Asset&id=2756741615&w=150&h=150"
+	end
+	if WindowConfig.IntroIcon == "rbxassetid://114924858399533" or not WindowConfig.IntroIcon then
+		WindowConfig.IntroIcon = "rbxthumb://type=Asset&id=2756741615&w=150&h=150"
+	end
 	OrionLib.Folder = WindowConfig.ConfigFolder
 	OrionLib.SaveCfg = WindowConfig.SaveConfig
 
@@ -995,12 +999,17 @@ function OrionLib:MakeWindow(WindowConfig)
 		}),
 	}), "Second")
 
-	local WindowName = AddThemeObject(SetProps(MakeElement("Label", WindowConfig.Name, 14), {
-		Size = UDim2.new(1, -30, 2, 0),
-		Position = UDim2.new(0, 25, 0, -24),
-		Font = Enum.Font.GothamBlack,
-		TextSize = 20,
-		TextColor3 = Color3.fromRGB(255, 255, 255)
+	local WindowName = AddThemeObject(SetProps(MakeElement("Label", WindowConfig.Name, 15), {
+		Size = WindowConfig.ShowIcon and UDim2.new(1, -175, 0, 28) or UDim2.new(1, -145, 0, 28),
+		Position = WindowConfig.ShowIcon and UDim2.new(0, 48, 0.5, 0) or UDim2.new(0, 16, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Font = Enum.Font.GothamBold,
+		TextSize = 16,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Center,
+		BackgroundTransparency = 1,
+		ZIndex = 5
 	}), "Text")
 
 	-- Flowing Animated Black & White Gradient over Title
@@ -1008,61 +1017,85 @@ function OrionLib:MakeWindow(WindowConfig)
 	TitleGradient.Name = "TitleFlowGradient"
 	TitleGradient.Color = ColorSequence.new({
 		ColorSequenceKeypoint.new(0.00, Color3.fromRGB(60, 60, 60)),
-		ColorSequenceKeypoint.new(0.25, Color3.fromRGB(160, 160, 160)),
+		ColorSequenceKeypoint.new(0.20, Color3.fromRGB(150, 150, 150)),
 		ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 255, 255)),
-		ColorSequenceKeypoint.new(0.75, Color3.fromRGB(160, 160, 160)),
+		ColorSequenceKeypoint.new(0.80, Color3.fromRGB(150, 150, 150)),
 		ColorSequenceKeypoint.new(1.00, Color3.fromRGB(60, 60, 60))
 	})
+	TitleGradient.Rotation = 0
 	TitleGradient.Offset = Vector2.new(-1, 0)
 	TitleGradient.Parent = WindowName
 
-	pcall(function()
-		local gradientTween = TweenService:Create(
-			TitleGradient,
-			TweenInfo.new(2.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, false),
-			{ Offset = Vector2.new(1, 0) }
-		)
-		gradientTween:Play()
+	local flowConn
+	flowConn = RunService.RenderStepped:Connect(function()
+		if not WindowName or not WindowName.Parent then
+			if flowConn then flowConn:Disconnect() end
+			return
+		end
+		local t = os.clock() * 0.55
+		TitleGradient.Offset = Vector2.new((t % 2) - 1, 0)
 	end)
+	table.insert(OrionLib.Connections, flowConn)
 
-	-- Safe Typewriter Effect (splits whole UTF-8 characters, never corrupts multi-byte strings)
+	-- Safe Typewriter Effect: types title -> waits 8s -> deletes -> waits 0.8s -> repeats
 	task.spawn(function()
-		local fullTitle = tostring(WindowConfig.Name or "")
+		local fullTitle = tostring(WindowConfig.Name or "s.w.a.t - Ware | private")
 		local characters = {}
-		pcall(function()
-			for _, code in utf8.graphemes(fullTitle) do
-				table.insert(characters, string.sub(fullTitle, code[1], code[2]))
+		if utf8 and utf8.charpattern then
+			for c in string.gmatch(fullTitle, utf8.charpattern) do
+				table.insert(characters, c)
 			end
-		end)
+		else
+			for c in string.gmatch(fullTitle, "[%z\1-\127\194-\244][\128-\191]*") do
+				table.insert(characters, c)
+			end
+		end
 		if #characters == 0 then
 			for i = 1, #fullTitle do
 				table.insert(characters, string.sub(fullTitle, i, i))
 			end
 		end
 
-		WindowName.Text = ""
+		-- Set title immediately so it is never blank on start
+		WindowName.Text = fullTitle
+
+		-- Wait for window to be mounted into game hierarchy
+		local waited = 0
+		while not (WindowName and WindowName.Parent and WindowName:IsDescendantOf(game)) and waited < 50 do
+			task.wait(0.1)
+			waited = waited + 1
+		end
+		task.wait(1.5)
+
 		while WindowName and WindowName.Parent do
-			-- 1. Type letter by letter
+			-- 1. Hold full title for 8 seconds
+			WindowName.Text = fullTitle
+			task.wait(8)
+
+			if not WindowName or not WindowName.Parent then break end
+
+			-- 2. Backspace / delete character by character
+			for i = #characters, 0, -1 do
+				if not WindowName or not WindowName.Parent then break end
+				WindowName.Text = i > 0 and table.concat(characters, "", 1, i) or ""
+				task.wait(0.035)
+			end
+			WindowName.Text = ""
+
+			if not WindowName or not WindowName.Parent then break end
+
+			-- 3. Wait 0.8 seconds
+			task.wait(0.8)
+
+			if not WindowName or not WindowName.Parent then break end
+
+			-- 4. Type character by character
 			for i = 1, #characters do
 				if not WindowName or not WindowName.Parent then break end
 				WindowName.Text = table.concat(characters, "", 1, i)
 				task.wait(0.05)
 			end
 			WindowName.Text = fullTitle
-
-			-- 2. Wait 8 seconds
-			task.wait(8)
-
-			-- 3. Delete letter by letter
-			for i = #characters, 0, -1 do
-				if not WindowName or not WindowName.Parent then break end
-				WindowName.Text = i > 0 and table.concat(characters, "", 1, i) or ""
-				task.wait(0.03)
-			end
-			WindowName.Text = ""
-
-			-- 4. Wait 0.8 seconds
-			task.wait(0.8)
 		end
 	end)
 
@@ -1111,10 +1144,12 @@ function OrionLib:MakeWindow(WindowConfig)
 	}), "Main")
 
 	if WindowConfig.ShowIcon then
-		WindowName.Position = UDim2.new(0, 48, 0, -24)
 		local WindowIcon = SetProps(MakeElement("Image", WindowConfig.Icon), {
-			Size = UDim2.new(0, 30, 0, 30),
-			Position = UDim2.new(0, 12, 0, 11)
+			Size = UDim2.new(0, 28, 0, 28),
+			Position = UDim2.new(0, 12, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundTransparency = 1,
+			ZIndex = 5
 		})
 		WindowIcon.Parent = MainWindow.TopBar
 	end	
